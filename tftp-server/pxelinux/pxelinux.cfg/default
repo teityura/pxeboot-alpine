@@ -1,0 +1,15 @@
+default vesamenu.c32
+prompt 1
+timeout 60
+
+display boot.msg
+
+label 1
+  menu label ^Install CentOS Stream Release8 With Kickstart
+  kernel images/centos-stream-release8/vmlinuz
+  append initrd=images/centos-stream-release8/initrd ip=dhcp inst.ks=http://192.168.1.100/kickstarts/centos-stream-release8.cfg
+
+label 2
+  menu label ^Install CentOS Stream Release8
+  kernel images/centos-stream-release8/vmlinuz
+  append initrd=images/centos-stream-release8/initrd ip=dhcp inst.repo=http://192.168.1.100/centos-stream-release8

@@ -1,0 +1,63 @@
+# > condition: service_completed_successfully
+# Require docker-compose version 1.29.2
+# Read: https://docs.docker.com/compose/install/
+
+version: '3'
+
+services:
+  iso-mounter:
+    build:
+      context: ./iso-mounter
+    image: pxeboot-alpine/iso-mounter
+    volumes:
+      - isos:/isos
+      - ./iso-mounter/docker-entrypoint.d:/docker-entrypoint.d
+    privileged: true
+
+  dhcp-server:
+    build:
+      context: ./dhcp-server
+    image: pxeboot-alpine/dhcp-server
+    volumes:
+      - ./dhcp-server/dhcpd.conf:/etc/dhcp/dhcpd.conf
+    network_mode: host
+
+  tftp-server:
+    depends_on:
+      iso-mounter:
+        condition: service_completed_successfully
+    build:
+      context: ./tftp-server
+    image: pxeboot-alpine/tftp-server
+    volumes:
+      - isos:/isos
+      - ./tftp-server/docker-entrypoint.d:/docker-entrypoint.d
+      - ./tftp-server/pxelinux/boot.msg:/tftpboot/pxelinux/boot.msg
+      - ./tftp-server/pxelinux/pxelinux.cfg:/tftpboot/pxelinux/pxelinux.cfg
+      - ./tftp-server/uefi/grub.cfg:/tftpboot/uefi/grub.cfg
+    network_mode: host
+
+  http-server:
+    depends_on:
+      iso-mounter:
+        condition: service_completed_successfully
+    build:
+      context: ./http-server
+    image: pxeboot-alpine/http-server
+    volumes:
+      - isos:/isos
+      - ./http-server/docker-entrypoint.d:/docker-entrypoint.d
+      - ./http-server/isos.conf:/etc/apache2/conf.d/isos.conf
+      - ./http-server/kickstarts:/var/kickstarts
+    network_mode: host
+
+  rsyslog-server:
+    build:
+      context: ./rsyslog-server
+    image: pxeboot-alpine/rsyslog-server
+    volumes:
+      - ./rsyslog-server/pxe.conf:/etc/rsyslog.d/pxe.conf
+    network_mode: host
+
+volumes:
+  isos:
